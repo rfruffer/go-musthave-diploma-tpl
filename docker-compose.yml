@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    image: golang:1.23.0-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "go mod download && go run ./cmd/gophermart/cmd/main.go"
+    environment:
+      - DATABASE_URI=postgres://user:password@db:5432/workdb?sslmode=disable
+      - ACCRUAL_SYSTEM_ADDRESS=http://host.docker.internal:8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: workdb
+    ports:
+      - "5432:5432"
+
+volumes:
+  db-data:

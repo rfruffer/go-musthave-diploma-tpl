@@ -30,7 +30,7 @@ func main() {
 	repo = postgresql.NewDBStore(db)
 
 	service = services.NewURLService(repo)
-	Handler = handlers.NewURLHandler(service, cfg.ResultHost)
+	Handler = handlers.NewURLHandler(service, cfg.SecretKey)
 
 	// doneCh := make(chan struct{})
 	// queue1 := make(chan async.DeleteTask)
