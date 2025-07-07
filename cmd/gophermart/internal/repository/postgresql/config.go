@@ -26,7 +26,7 @@ func InitDB(dsn string) (*pgxpool.Pool, error) {
 
 	schema := []string{
 		`CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
+			id UUID PRIMARY KEY,
 			login TEXT UNIQUE NOT NULL,
 			password_hash TEXT NOT NULL,
 			balance NUMERIC(18, 2) DEFAULT 0,
@@ -35,7 +35,7 @@ func InitDB(dsn string) (*pgxpool.Pool, error) {
 
 		`CREATE TABLE IF NOT EXISTS orders (
 			number TEXT PRIMARY KEY,
-			user_id INTEGER REFERENCES users(id),
+			user_id UUID REFERENCES users(id),
 			status TEXT NOT NULL,
 			accrual NUMERIC(18, 2),
 			uploaded_at TIMESTAMP DEFAULT now()
@@ -43,7 +43,7 @@ func InitDB(dsn string) (*pgxpool.Pool, error) {
 
 		`CREATE TABLE IF NOT EXISTS withdrawals (
 			id SERIAL PRIMARY KEY,
-			user_id INTEGER REFERENCES users(id),
+			user_id UUID REFERENCES users(id),
 			order_number TEXT NOT NULL,
 			amount NUMERIC(18, 2) NOT NULL,
 			processed_at TIMESTAMP DEFAULT now()

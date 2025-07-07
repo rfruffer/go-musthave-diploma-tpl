@@ -1,3 +1,4 @@
+// cmd/gophermart/main.go
 package main
 
 import (
@@ -8,8 +9,8 @@ import (
 	"syscall"
 
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/config"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/async"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/handlers"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/postgresql"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/services"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/router"
@@ -18,29 +19,23 @@ import (
 func main() {
 	cfg := config.ParseFlags()
 
-	var repo repository.StoreRepositoryInterface
-	var service *services.Service
-	var Handler *handlers.Handler
-
 	db, err := postgresql.InitDB(cfg.DBDSN)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
 	defer postgresql.CloseDB(db)
-	repo = postgresql.NewDBStore(db)
 
-	service = services.NewURLService(repo)
-	Handler = handlers.NewURLHandler(service, cfg.SecretKey)
+	repo := postgresql.NewDBStore(db)
+	orderQueue := make(chan string, 100)
 
-	// doneCh := make(chan struct{})
-	// queue1 := make(chan async.DeleteTask)
+	service := services.NewService(repo, cfg.Accrual, orderQueue)
+	handler := handlers.NewHandler(service, cfg.SecretKey)
 
-	// merged := async.FanIn(doneCh, queue1)
-	// async.StartDeleteWorker(doneCh, repo, merged)
-	// shortURLHandler.DeleteChan = queue1
+	// запуск воркера
+	async.StartOrderWorker(orderQueue, service)
 
 	r := router.SetupRouter(router.Router{
-		Handler:   Handler,
+		Handler:   handler,
 		SecretKey: cfg.SecretKey,
 	})
 
