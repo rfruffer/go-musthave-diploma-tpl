@@ -6,18 +6,15 @@ import (
 )
 
 type Config struct {
-	StartHost  string
-	ResultHost string
-	FilePath   string
-	DBDSN      string
-	Storage    string
-	SecretKey  string
+	StartHost string
+	DBDSN     string
+	SecretKey string
+	Accrual   string
 }
 
 func ParseFlags() *Config {
 	startHost := flag.String("a", "0.0.0.0:8080", "address and port to run server")
-	resultHost := flag.String("b", "http://localhost:8080", "base URL for shortened links")
-	filePath := flag.String("f", "", "path to file storage")
+	accrual := flag.String("r", "0.0.0.0:8080", "address to run accrual")
 	dbDSN := flag.String("d", "", "database DSN for PostgreSQL")
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
@@ -26,30 +23,20 @@ func ParseFlags() *Config {
 
 	flag.Parse()
 
-	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
+	if envRunAddr := os.Getenv("RUN_ADDRESS"); envRunAddr != "" {
 		*startHost = envRunAddr
 	}
-	if envResultHost := os.Getenv("BASE_URL"); envResultHost != "" {
-		*resultHost = envResultHost
+	if envAccrual := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccrual != "" {
+		*accrual = envAccrual
 	}
-	if envFilePath := os.Getenv("FILE_STORAGE_PATH"); envFilePath != "" {
-		*filePath = envFilePath
-	}
-	if envDB := os.Getenv("DATABASE_DSN"); envDB != "" {
+	if envDB := os.Getenv("DATABASE_URI"); envDB != "" {
 		*dbDSN = envDB
 	}
 
-	storage := ""
-	if *dbDSN != "" {
-		storage = "postgres"
-	}
-
 	return &Config{
-		StartHost:  *startHost,
-		ResultHost: *resultHost,
-		FilePath:   *filePath,
-		DBDSN:      *dbDSN,
-		Storage:    storage,
-		SecretKey:  secretKey,
+		StartHost: *startHost,
+		DBDSN:     *dbDSN,
+		Accrual:   *accrual,
+		SecretKey: secretKey,
 	}
 }
