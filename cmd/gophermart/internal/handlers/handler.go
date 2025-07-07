@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	// "io"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +19,7 @@ type Handler struct {
 	// DeleteChan chan async.DeleteTask
 }
 
-func NewURLHandler(service *services.Service, secretKey string) *Handler {
+func NewHandler(service *services.Service, secretKey string) *Handler {
 	return &Handler{service: service, secretKey: secretKey}
 }
 
@@ -63,4 +66,49 @@ func (h *Handler) Login(c *gin.Context) {
 
 	middlewares.SetAuthCookie(c, user.ID, h.secretKey)
 	c.Status(http.StatusOK)
+}
+
+func (h *Handler) UploadOrder(c *gin.Context) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userID, ok := userIDRaw.(string)
+	if !ok {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	orderNumberRaw, err := io.ReadAll(c.Request.Body)
+	if err != nil || len(orderNumberRaw) == 0 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	orderNumber := string(orderNumberRaw)
+
+	if !services.IsValidLuhn(orderNumber) {
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	statusCode, err := h.service.SaveNewOrder(c.Request.Context(), userID, orderNumber)
+	if err != nil {
+		switch statusCode {
+		case http.StatusConflict:
+			c.AbortWithStatus(http.StatusConflict)
+			return
+		case http.StatusOK:
+			c.Status(http.StatusOK)
+			return
+		default:
+			log.Printf("UploadOrder error: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	h.service.EnqueueOrderForProcessing(orderNumber)
+
+	c.Status(http.StatusAccepted)
 }
