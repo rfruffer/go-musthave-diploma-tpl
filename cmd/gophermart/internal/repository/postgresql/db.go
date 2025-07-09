@@ -99,3 +99,28 @@ func (d *DBStore) GetPendingOrders(ctx context.Context) ([]string, error) {
 	}
 	return orders, nil
 }
+
+func (d *DBStore) GetOrdersByUser(ctx context.Context, userID string) ([]models.Order, error) {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := d.db.Query(ctx, `
+	SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1
+	ORDER BY uploaded_at DESC
+	`, uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		var order models.Order
+		if err := rows.Scan(&order.Number, &order.Status, &order.Accrual, &order.UploadedAt); err != nil {
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+	return orders, nil
+}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	// "io"
+
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 type Handler struct {
 	service   *services.Service
 	secretKey string
-	// DeleteChan chan async.DeleteTask
 }
 
 func NewHandler(service *services.Service, secretKey string) *Handler {
@@ -111,4 +111,32 @@ func (h *Handler) UploadOrder(c *gin.Context) {
 	h.service.EnqueueOrderForProcessing(orderNumber)
 
 	c.Status(http.StatusAccepted)
+}
+
+func (h *Handler) GetOrders(c *gin.Context) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userID, ok := userIDRaw.(string)
+	log.Printf("UuserID: %v", userID)
+	if !ok {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	orders, err := h.service.GetUserOrders(c.Request.Context(), userID)
+	log.Printf("orders: %v", orders)
+	if err != nil {
+		log.Printf("GetUserOrders error: %v", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if len(orders) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "application/json")
+	c.JSON(http.StatusOK, orders)
 }

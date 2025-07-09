@@ -46,6 +46,7 @@ func SetupRouter(rt Router) http.Handler {
 	auth.Use(middlewares.AuthMiddleware(rt.SecretKey))
 
 	auth.POST("/api/user/orders", rt.Handler.UploadOrder)
+	auth.GET("/api/user/orders", rt.Handler.GetOrders)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.String(http.StatusBadRequest, "invalid request")
