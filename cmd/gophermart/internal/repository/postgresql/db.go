@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customErrors"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customerrors"
 )
 
 type DBStore struct {
@@ -58,9 +58,9 @@ func (d *DBStore) InsertOrder(ctx context.Context, userID uuid.UUID, orderNumber
 
 	if err == nil {
 		if existingUserID == userID {
-			return customErrors.ErrOrderAlreadyUploadedBySameUser
+			return customerrors.ErrOrderAlreadyUploadedBySameUser
 		}
-		return customErrors.ErrOrderUploadedByAnotherUser
+		return customerrors.ErrOrderUploadedByAnotherUser
 	}
 
 	_, err = d.db.Exec(ctx, `
@@ -157,7 +157,7 @@ func (d *DBStore) Withdraw(ctx context.Context, userID uuid.UUID, order string, 
 		return err
 	}
 	if currentBalance < amount {
-		return customErrors.ErrInsufficientBalance
+		return customerrors.ErrInsufficientBalance
 	}
 
 	_, err = tx.Exec(ctx, `

@@ -14,7 +14,7 @@ import (
 
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customErrors"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customerrors"
 )
 
 type Service struct {
@@ -55,10 +55,10 @@ func (s *Service) SaveNewOrder(ctx context.Context, userID, orderNumber string) 
 	}
 	err = s.repo.InsertOrder(ctx, uid, orderNumber)
 	if err != nil {
-		if errors.Is(err, customErrors.ErrOrderAlreadyUploadedBySameUser) {
+		if errors.Is(err, customerrors.ErrOrderAlreadyUploadedBySameUser) {
 			return 200, err
 		}
-		if errors.Is(err, customErrors.ErrOrderUploadedByAnotherUser) {
+		if errors.Is(err, customerrors.ErrOrderUploadedByAnotherUser) {
 			return 409, err
 		}
 		return 500, err
@@ -144,7 +144,7 @@ func (s *Service) Withdraw(ctx context.Context, userID, order string, amount flo
 		return err
 	}
 	if !IsValidLuhn(order) {
-		return customErrors.ErrInvalidOrderNumber
+		return customerrors.ErrInvalidOrderNumber
 	}
 	return s.repo.Withdraw(ctx, uid, order, amount)
 }

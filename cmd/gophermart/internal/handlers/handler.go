@@ -13,7 +13,7 @@ import (
 
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/middlewares"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customErrors"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customerrors"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/services"
 )
 
@@ -163,9 +163,9 @@ func (h *Handler) Withdraw(c *gin.Context) {
 	err := h.service.Withdraw(c.Request.Context(), userID, req.Order, req.Sum)
 	if err != nil {
 		switch err {
-		case customErrors.ErrInsufficientBalance:
+		case customerrors.ErrInsufficientBalance:
 			c.AbortWithStatus(http.StatusPaymentRequired)
-		case customErrors.ErrInvalidOrderNumber:
+		case customerrors.ErrInvalidOrderNumber:
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
 		default:
 			c.AbortWithStatus(http.StatusInternalServerError)
