@@ -11,6 +11,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/middlewares"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
+	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customErrors"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/services"
 )
 
@@ -139,4 +141,85 @@ func (h *Handler) GetOrders(c *gin.Context) {
 
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.JSON(http.StatusOK, orders)
+}
+
+func (h *Handler) Withdraw(c *gin.Context) {
+	var req models.WithdrawalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userID, ok := userIDRaw.(string)
+	if !ok {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	err := h.service.Withdraw(c.Request.Context(), userID, req.Order, req.Sum)
+	if err != nil {
+		switch err {
+		case customErrors.ErrInsufficientBalance:
+			c.AbortWithStatus(http.StatusPaymentRequired)
+		case customErrors.ErrInvalidOrderNumber:
+			c.AbortWithStatus(http.StatusUnprocessableEntity)
+		default:
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (h *Handler) GetWithdrawals(c *gin.Context) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userID, ok := userIDRaw.(string)
+	if !ok {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	list, err := h.service.GetWithdrawals(c.Request.Context(), userID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	if len(list) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.JSON(http.StatusOK, list)
+}
+
+func (h *Handler) GetUserBalance(c *gin.Context) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userID, ok := userIDRaw.(string)
+	if !ok {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	balance, err := h.service.GetUserBalance(c.Request.Context(), userID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, balance)
 }

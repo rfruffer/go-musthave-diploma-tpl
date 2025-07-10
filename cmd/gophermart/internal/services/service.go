@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository"
 	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customErrors"
@@ -47,7 +49,11 @@ func (s *Service) GetUserByLogin(login string) (*models.User, error) {
 }
 
 func (s *Service) SaveNewOrder(ctx context.Context, userID, orderNumber string) (int, error) {
-	err := s.repo.InsertOrder(ctx, userID, orderNumber)
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return 0, err
+	}
+	err = s.repo.InsertOrder(ctx, uid, orderNumber)
 	if err != nil {
 		if errors.Is(err, customErrors.ErrOrderAlreadyUploadedBySameUser) {
 			return 200, err
@@ -108,7 +114,7 @@ func (s *Service) ProcessAccrual(orderNumber string) {
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		log.Printf("accrual status: order=%s status=%s accrual=%.2f", res.Number, res.Status, *res.Accrual)
+		log.Printf("accrual status: order=%s status=%s accrual=%.2f", res.Number, res.Status, res.Accrual)
 
 		if err := s.repo.UpdateOrderAccrual(context.Background(), res.Number, res.Status, *res.Accrual); err != nil {
 			log.Printf("failed to update accrual: %v", err)
@@ -118,9 +124,40 @@ func (s *Service) ProcessAccrual(orderNumber string) {
 }
 
 func (s *Service) GetUserOrders(ctx context.Context, userID string) ([]models.Order, error) {
-	orders, err := s.repo.GetOrdersByUser(ctx, userID)
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := s.repo.GetOrdersByUser(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 	return orders, nil
+}
+
+func (s *Service) Withdraw(ctx context.Context, userID, order string, amount float64) error {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return err
+	}
+	if !IsValidLuhn(order) {
+		return customErrors.ErrInvalidOrderNumber
+	}
+	return s.repo.Withdraw(ctx, uid, order, amount)
+}
+
+func (s *Service) GetWithdrawals(ctx context.Context, userID string) ([]models.Withdrawal, error) {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetWithdrawals(ctx, uid)
+}
+
+func (s *Service) GetUserBalance(ctx context.Context, userID string) (*models.Balance, error) {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetUserBalance(ctx, uid)
 }
