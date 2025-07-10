@@ -6,7 +6,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    command: sh -c "go mod download && go run ./cmd/gophermart/cmd/main.go"
+    command: sh -c "go mod download && go run ./cmd/gophermart/main.go"
     environment:
       - DATABASE_URI=postgres://user:password@db:5432/workdb?sslmode=disable
       - ACCRUAL_SYSTEM_ADDRESS=http://host.docker.internal:8080
