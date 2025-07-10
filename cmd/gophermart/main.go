@@ -8,12 +8,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/config"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/async"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/handlers"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/postgresql"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/services"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/router"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/config"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/async"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/handlers"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/repository/postgresql"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/services"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/router"
 )
 
 func main() {

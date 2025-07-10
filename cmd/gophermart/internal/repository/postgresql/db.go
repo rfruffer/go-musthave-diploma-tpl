@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customerrors"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/models"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/repository/customerrors"
 )
 
 type DBStore struct {

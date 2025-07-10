@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/models"
 )
 
 type StoreRepositoryInterface interface {

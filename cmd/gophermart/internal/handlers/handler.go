@@ -11,10 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/middlewares"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/models"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/repository/customerrors"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/services"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/middlewares"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/models"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/repository/customerrors"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/services"
 )
 
 type Handler struct {
