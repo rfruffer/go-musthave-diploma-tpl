@@ -63,6 +63,7 @@ func (s *Service) SaveNewOrder(ctx context.Context, userID, orderNumber string) 
 		}
 		return 500, err
 	}
+	log.Printf("Status: %v", orderNumber)
 	s.EnqueueOrderForProcessing(orderNumber)
 	return 202, nil
 }
@@ -102,7 +103,7 @@ func (s *Service) ProcessAccrual(orderNumber string) {
 			return
 		}
 
-		var res models.Order
+		var res models.AccrualResponse
 		err = json.NewDecoder(resp.Body).Decode(&res)
 		resp.Body.Close()
 		if err != nil {
@@ -114,12 +115,14 @@ func (s *Service) ProcessAccrual(orderNumber string) {
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		log.Printf("accrual status: order=%s status=%s accrual=%.2f", res.Number, res.Status, res.Accrual)
 
-		if err := s.repo.UpdateOrderAccrual(context.Background(), res.Number, res.Status, *res.Accrual); err != nil {
-			log.Printf("failed to update accrual: %v", err)
+		if res.Status == "PROCESSED" {
+			log.Printf("accrual processed: %s +%.2f", res.Order, *res.Accrual)
+			if err := s.repo.UpdateOrderAccrual(context.Background(), res.Order, res.Status, *res.Accrual); err != nil {
+				log.Printf("failed to update accrual: %v", err)
+			}
+			return
 		}
-		return
 	}
 }
 
