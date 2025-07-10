@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -87,7 +88,7 @@ func (h *Handler) UploadOrder(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	orderNumber := string(orderNumberRaw)
+	orderNumber := strings.TrimSpace(string(orderNumberRaw))
 
 	if !services.IsValidLuhn(orderNumber) {
 		c.AbortWithStatus(http.StatusUnprocessableEntity)
@@ -110,7 +111,7 @@ func (h *Handler) UploadOrder(c *gin.Context) {
 		}
 	}
 
-	h.service.EnqueueOrderForProcessing(orderNumber)
+	// h.service.EnqueueOrderForProcessing(orderNumber)
 
 	c.Status(http.StatusAccepted)
 }
@@ -122,7 +123,6 @@ func (h *Handler) GetOrders(c *gin.Context) {
 		return
 	}
 	userID, ok := userIDRaw.(string)
-	log.Printf("UuserID: %v", userID)
 	if !ok {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -130,7 +130,6 @@ func (h *Handler) GetOrders(c *gin.Context) {
 	orders, err := h.service.GetUserOrders(c.Request.Context(), userID)
 	log.Printf("orders: %v", orders)
 	if err != nil {
-		log.Printf("GetUserOrders error: %v", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

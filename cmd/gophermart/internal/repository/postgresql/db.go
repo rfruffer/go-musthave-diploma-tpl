@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -70,13 +71,35 @@ func (d *DBStore) InsertOrder(ctx context.Context, userID uuid.UUID, orderNumber
 }
 
 func (d *DBStore) UpdateOrderAccrual(ctx context.Context, orderNumber, status string, accrual float64) error {
-	_, err := d.db.Exec(ctx, `
+	tx, err := d.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// обновить заказ
+	var userID string
+	err = tx.QueryRow(ctx, `
 		UPDATE orders
-		SET status = $1,
-		    accrual = $2
+		SET status = $1, accrual = $2
 		WHERE number = $3
-	`, status, accrual, orderNumber)
-	return err
+		RETURNING user_id
+	`, status, accrual, orderNumber).Scan(&userID)
+	if err != nil {
+		return err
+	}
+	log.Printf("row: %v", userID)
+	// пополнить баланс
+	_, err = tx.Exec(ctx, `
+		UPDATE users
+		SET balance = balance + $1
+		WHERE id = $2
+	`, accrual, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (d *DBStore) GetPendingOrders(ctx context.Context) ([]string, error) {
