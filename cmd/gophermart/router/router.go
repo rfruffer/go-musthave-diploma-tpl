@@ -25,16 +25,6 @@ func SetupRouter(rt Router) http.Handler {
 
 	r := gin.New()
 
-	/*
-	   POST /api/user/register — регистрация пользователя;
-	   POST /api/user/login — аутентификация пользователя;
-	   POST /api/user/orders — загрузка пользователем номера заказа для расчёта;
-	   GET /api/user/orders — получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях;
-	   GET /api/user/balance — получение текущего баланса счёта баллов лояльности пользователя;
-	   POST /api/user/balance/withdraw — запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа;
-	   GET /api/user/withdrawals — получение информации о выводе средств с накопительного счёта пользователем.
-	*/
-
 	middlewares.InitLogger(sugar)
 	r.Use(middlewares.GinLoggingMiddleware())
 	r.Use(gin.Recovery())
@@ -47,6 +37,11 @@ func SetupRouter(rt Router) http.Handler {
 
 	auth.POST("/api/user/orders", rt.Handler.UploadOrder)
 	auth.GET("/api/user/orders", rt.Handler.GetOrders)
+
+	auth.POST("/api/user/balance/withdraw", rt.Handler.Withdraw)
+	auth.GET("/api/user/withdrawals", rt.Handler.GetWithdrawals)
+
+	auth.GET("/api/user/balance", rt.Handler.GetUserBalance)
 
 	r.NoRoute(func(c *gin.Context) {
 		c.String(http.StatusBadRequest, "invalid request")

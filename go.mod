@@ -4,6 +4,7 @@ go 1.21.3
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/gofrs/uuid v4.0.0+incompatible
 	go.uber.org/zap v1.27.0
 )
 

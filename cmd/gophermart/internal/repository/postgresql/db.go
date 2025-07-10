@@ -49,8 +49,8 @@ func (d *DBStore) GetUserByLogin(ctx context.Context, login string) (*models.Use
 	return &u, nil
 }
 
-func (d *DBStore) InsertOrder(ctx context.Context, userID, orderNumber string) error {
-	var existingUserID string
+func (d *DBStore) InsertOrder(ctx context.Context, userID uuid.UUID, orderNumber string) error {
+	var existingUserID uuid.UUID
 	err := d.db.QueryRow(ctx, `
 		SELECT user_id FROM orders WHERE number = $1
 	`, orderNumber).Scan(&existingUserID)
@@ -100,15 +100,11 @@ func (d *DBStore) GetPendingOrders(ctx context.Context) ([]string, error) {
 	return orders, nil
 }
 
-func (d *DBStore) GetOrdersByUser(ctx context.Context, userID string) ([]models.Order, error) {
-	uid, err := uuid.Parse(userID)
-	if err != nil {
-		return nil, err
-	}
+func (d *DBStore) GetOrdersByUser(ctx context.Context, userID uuid.UUID) ([]models.Order, error) {
 	rows, err := d.db.Query(ctx, `
 	SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1
 	ORDER BY uploaded_at DESC
-	`, uid)
+	`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -123,4 +119,72 @@ func (d *DBStore) GetOrdersByUser(ctx context.Context, userID string) ([]models.
 		orders = append(orders, order)
 	}
 	return orders, nil
+}
+
+func (d *DBStore) Withdraw(ctx context.Context, userID uuid.UUID, order string, amount float64) error {
+	tx, err := d.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var currentBalance float64
+	err = tx.QueryRow(ctx, `SELECT balance FROM users WHERE id = $1 FOR UPDATE`, userID).Scan(&currentBalance)
+	if err != nil {
+		return err
+	}
+	if currentBalance < amount {
+		return customErrors.ErrInsufficientBalance
+	}
+
+	_, err = tx.Exec(ctx, `
+		INSERT INTO withdrawals (user_id, order_number, amount) VALUES ($1, $2, $3)
+	`, userID, order, amount)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE users SET balance = balance - $1, withdrawn = withdrawn + $1 WHERE id = $2
+	`, amount, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (d *DBStore) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]models.Withdrawal, error) {
+	rows, err := d.db.Query(ctx, `
+	SELECT order_number, amount, processed_at
+	FROM withdrawals
+	WHERE user_id = $1
+	ORDER BY processed_at ASC
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []models.Withdrawal
+	for rows.Next() {
+		var w models.Withdrawal
+		if err := rows.Scan(&w.Order, &w.Sum, &w.ProcessedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, w)
+	}
+	return result, nil
+}
+
+func (d *DBStore) GetUserBalance(ctx context.Context, userID uuid.UUID) (*models.Balance, error) {
+	var balance models.Balance
+	err := d.db.QueryRow(ctx, `
+		SELECT balance, withdrawn FROM users WHERE id = $1
+	`, userID).Scan(&balance.Current, &balance.Withdrawn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &balance, nil
 }
