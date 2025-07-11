@@ -70,7 +70,7 @@ cd go-musthave-diploma-tpl
 2. Запустите симулятор Accrual (замените бинарник под вашу ОС):
 
 ```bash
-./accrual_darwin_arm64 -a localhost:8080
+./accrual_darwin_arm64
 ```
 
 3. Запустите Gophermart и PostgreSQL через Docker:

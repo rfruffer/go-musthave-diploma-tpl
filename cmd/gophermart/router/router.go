@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/handlers"
-	"github.com/rfruffer/go-musthave-diploma-tpl.git/cmd/gophermart/internal/middlewares"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/handlers"
+	"github.com/rfruffer/go-musthave-diploma-tpl/cmd/gophermart/internal/middlewares"
 )
 
 type Router struct {
